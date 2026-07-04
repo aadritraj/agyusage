@@ -1,0 +1,26 @@
+{
+  "name": "agyusage",
+  "version": "1.0.0",
+  "description": "Antigravity CLI Usage TUI App",
+  "type": "module",
+  "main": "src/index.tsx",
+  "scripts": {
+    "start": "bun run src/index.tsx",
+    "build": "bun build src/index.tsx --target=node --outfile=dist/agyusage",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "ink": "^4.4.1",
+    "ink-select-input": "^5.0.0",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.55",
+    "bun-types": "^1.0.26",
+    "oxfmt": "^0.57.0",
+    "react-devtools-core": "^7.0.1",
+    "typescript": "^5.3.3"
+  }
+}
