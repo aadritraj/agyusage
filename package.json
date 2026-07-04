@@ -6,7 +6,7 @@
   "main": "src/index.tsx",
   "scripts": {
     "start": "bun run src/index.tsx",
-    "build": "bun build src/index.tsx --target=node --outfile=dist/agyusage",
+    "build": "bun build src/index.tsx --target=bun --outfile=dist/agyusage",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check"
   },
