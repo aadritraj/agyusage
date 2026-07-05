@@ -31,7 +31,7 @@ const printDailyUsage = async (): Promise<void> => {
 
   const sortedDates = Object.keys(dailyData).sort((a, b) => b.localeCompare(a));
 
-  console.log("\nDAILY ANTIGRAVITY CLI SPEND");
+  console.log("\nDaily Antigravity Spend");
   console.log("─".repeat(70));
   console.log(
     `${pad("Date", 15)} | ${pad("Sessions", 10, "right")} | ${pad("Input", 12, "right")} | ${pad("Output", 12, "right")} | ${pad("Total Spend", 14, "right")}`,
@@ -87,7 +87,7 @@ const printProjectsUsage = async (): Promise<void> => {
 
   const sortedProjects = Object.values(projectMap).sort((a, b) => b.cost - a.cost);
 
-  console.log("\nPROJECT WORKSPACE SPEND SUMMARY");
+  console.log("\nProject Workspace Spend Summary");
   console.log("─".repeat(75));
   console.log(
     `${pad("Project Workspace", 25)} | ${pad("Sessions", 10, "right")} | ${pad("Input", 12, "right")} | ${pad("Output", 12, "right")} | ${pad("Total Spend", 12, "right")}`,
@@ -106,7 +106,7 @@ const printSessionsList = async (): Promise<void> => {
   await loadPricingCache();
   const sessions = await getSessionsList();
 
-  console.log("\nCONVERSATION SESSIONS SPEND");
+  console.log("\nConversation Sessions Spend");
   console.log("─".repeat(90));
   console.log(
     `${pad("Date/Time", 19)} | ${pad("Workspace", 20)} | ${pad("Model Name", 25)} | ${pad("Steps", 6, "right")} | ${pad("Cost", 12, "right")}`,
