@@ -132,21 +132,7 @@ export const App = (): React.JSX.Element => {
       justifyContent="space-between"
     >
       <Box flexDirection="column" flexGrow={1}>
-        <Header />
-
-        {activeTab !== "detail" && (
-          <Box gap={4} marginBottom={1} paddingX={2}>
-            <Text bold={activeTab === "dashboard"} inverse={activeTab === "dashboard"}>
-              [ 1. Dashboard]
-            </Text>
-            <Text bold={activeTab === "sessions"} inverse={activeTab === "sessions"}>
-              [ 2. Sessions ]
-            </Text>
-            <Text bold={activeTab === "projects"} inverse={activeTab === "projects"}>
-              [ 3. Projects ]
-            </Text>
-          </Box>
-        )}
+        <Header activeTab={activeTab} />
 
         <Box flexGrow={1} flexDirection="column" minHeight={0}>
           {activeTab === "dashboard" && <Dashboard sessions={sessions} />}
