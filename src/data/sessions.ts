@@ -16,6 +16,7 @@ export interface SessionInfo {
   cachedTokens: number;
   cost: number;
   stepsCount: number;
+  toolCalls: number;
 }
 
 const baseDir = path.join(os.homedir(), ".gemini", "antigravity-cli");
@@ -47,6 +48,35 @@ export const loadHistoryMap = async (): Promise<
     // Catch this, an empty catch block!
   }
   return map;
+};
+
+const countToolCalls = async (convId: string): Promise<number> => {
+  let toolCallsCount = 0;
+  try {
+    const transcriptPath = path.join(
+      baseDir,
+      "brain",
+      convId,
+      ".system_generated",
+      "logs",
+      "transcript.jsonl",
+    );
+    const file = Bun.file(transcriptPath);
+    if (await file.exists()) {
+      const text = await file.text();
+      const lines = text.trim().split("\n");
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const entry = JSON.parse(line);
+        if (entry.tool_calls && Array.isArray(entry.tool_calls)) {
+          toolCallsCount += entry.tool_calls.length;
+        }
+      }
+    }
+  } catch (e) {
+    // Ignored
+  }
+  return toolCallsCount;
 };
 
 export const getSessionsList = async (): Promise<SessionInfo[]> => {
@@ -129,6 +159,7 @@ export const getSessionsList = async (): Promise<SessionInfo[]> => {
       if (inputTokens > 0 || outputTokens > 0) {
         const cost = calculateCost(model, inputTokens, outputTokens, cachedTokens);
         const workspaceName = workspace ? path.basename(workspace) : "Global Context";
+        const toolCalls = await countToolCalls(convId);
 
         sessions.push({
           id: convId,
@@ -141,6 +172,7 @@ export const getSessionsList = async (): Promise<SessionInfo[]> => {
           cachedTokens,
           cost,
           stepsCount,
+          toolCalls,
         });
       }
     } catch (e) {

@@ -25,6 +25,7 @@ export const Header = ({ activeTab }: HeaderProps): React.JSX.Element => {
           <TabItem isActive={activeTab === "dashboard"} label="[ 1. Dashboard]" />
           <TabItem isActive={activeTab === "sessions"} label="[ 2. Sessions ]" />
           <TabItem isActive={activeTab === "projects"} label="[ 3. Projects ]" />
+          <TabItem isActive={activeTab === "charts"} label="[ 4. Charts ]" />
         </Box>
       )}
     </>

@@ -41,7 +41,7 @@ export const SessionDetail = ({
     };
   }, [session.id]);
 
-  useInput((input, key) => {
+  useInput((_input, key) => {
     if (loading || steps.length === 0) return;
 
     if (key.upArrow) {

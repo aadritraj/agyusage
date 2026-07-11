@@ -6,10 +6,11 @@ import { Dashboard } from "./views/Dashboard";
 import { SessionsList } from "./views/SessionsList";
 import { SessionDetail } from "./views/SessionDetail";
 import { ProjectsSummary } from "./views/ProjectsSummary";
+import { ChartsView } from "./views/ChartsView";
 import { fetchPricingDynamically, loadPricingCache } from "../data/pricing";
 import { getSessionsList, type SessionInfo } from "../data/sessions";
 
-const TABS = ["dashboard", "sessions", "projects"] as const;
+const TABS = ["dashboard", "sessions", "projects", "charts"] as const;
 type TabType = (typeof TABS)[number] | "detail";
 
 const useTerminalSize = () => {
@@ -96,6 +97,8 @@ export const App = (): React.JSX.Element => {
       setActiveTab("sessions");
     } else if (input === "3") {
       setActiveTab("projects");
+    } else if (input === "4") {
+      setActiveTab("charts");
     }
 
     if (activeTab === "sessions" && sessions.length > 0) {
@@ -144,6 +147,7 @@ export const App = (): React.JSX.Element => {
             />
           )}
           {activeTab === "projects" && <ProjectsSummary sessions={sessions} />}
+          {activeTab === "charts" && <ChartsView sessions={sessions} columns={columns} />}
           {activeTab === "detail" && selectedSession && (
             <SessionDetail
               session={selectedSession}
