@@ -46,7 +46,8 @@ export const ChartsView = ({ sessions, columns }: ChartsViewProps): React.JSX.El
         color: modelColors[model],
       };
     })
-    .filter((d) => d.value > 0);
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   const cacheHitsData = uniqueModels
     .map((model) => {
@@ -59,7 +60,8 @@ export const ChartsView = ({ sessions, columns }: ChartsViewProps): React.JSX.El
         color: modelColors[model],
       };
     })
-    .filter((d) => d.value > 0);
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   const toolCallsData = uniqueModels
     .map((model) => {
@@ -72,7 +74,8 @@ export const ChartsView = ({ sessions, columns }: ChartsViewProps): React.JSX.El
         color: modelColors[model],
       };
     })
-    .filter((d) => d.value > 0);
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   const modelUsageData = uniqueModels
     .map((model) => {
@@ -83,7 +86,8 @@ export const ChartsView = ({ sessions, columns }: ChartsViewProps): React.JSX.El
         color: modelColors[model],
       };
     })
-    .filter((d) => d.value > 0);
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   const costPerTaskData = uniqueModels
     .map((model) => {
@@ -96,7 +100,8 @@ export const ChartsView = ({ sessions, columns }: ChartsViewProps): React.JSX.El
         color: modelColors[model],
       };
     })
-    .filter((d) => d.value > 0);
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   const renderChart = (): React.JSX.Element => {
     let chartData: any[] = [];
