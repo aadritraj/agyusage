@@ -5,9 +5,13 @@ import { formatCost, formatTokens } from "../../utils/format";
 
 interface ProjectsSummaryProps {
   sessions: SessionInfo[];
+  selectedIndex: number;
 }
 
-export const ProjectsSummary = ({ sessions }: ProjectsSummaryProps): React.JSX.Element => {
+export const ProjectsSummary = ({
+  sessions,
+  selectedIndex,
+}: ProjectsSummaryProps): React.JSX.Element => {
   // Aggregate sessions by workspace path
   const projectMap: Record<
     string,
@@ -37,10 +41,11 @@ export const ProjectsSummary = ({ sessions }: ProjectsSummaryProps): React.JSX.E
 
   return (
     <Box flexDirection="column" borderStyle="single" borderColor="gray" paddingX={2} paddingY={1}>
-      <Box marginBottom={1}>
+      <Box marginBottom={1} justifyContent="space-between">
         <Text bold underline>
           PROJECT WORKSPACE SPEND SUMMARY
         </Text>
+        <Text dimColor>↑/↓ navigate · Enter to filter sessions</Text>
       </Box>
 
       <Box flexDirection="column">
@@ -58,7 +63,8 @@ export const ProjectsSummary = ({ sessions }: ProjectsSummaryProps): React.JSX.E
         {sortedProjects.length === 0 ? (
           <Text>No projects recorded yet.</Text>
         ) : (
-          sortedProjects.map((proj) => {
+          sortedProjects.map((proj, i) => {
+            const isSelected = i === selectedIndex;
             const displayWorkspace = proj.workspaceName.slice(0, 23).padEnd(25);
             const sessionsCountText = proj.sessionsCount.toString().padStart(10);
             const inputText = formatTokens(proj.input).padStart(12);
@@ -67,8 +73,9 @@ export const ProjectsSummary = ({ sessions }: ProjectsSummaryProps): React.JSX.E
 
             return (
               <Box key={proj.path} gap={2}>
-                <Text>
-                  {displayWorkspace} {sessionsCountText} {inputText} {outputText} {costText}
+                <Text bold={isSelected} inverse={isSelected}>
+                  {isSelected ? "→" : " "} {displayWorkspace} {sessionsCountText} {inputText}{" "}
+                  {outputText} {costText}
                 </Text>
               </Box>
             );

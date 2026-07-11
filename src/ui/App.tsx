@@ -44,6 +44,8 @@ export const App = (): React.JSX.Element => {
   const [loading, setLoading] = React.useState(true);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [selectedSessionId, setSelectedSessionId] = React.useState<string | null>(null);
+  const [projectFilter, setProjectFilter] = React.useState<string | null>(null);
+  const [projectSelectedIndex, setProjectSelectedIndex] = React.useState(0);
 
   React.useEffect(() => {
     process.stdout.write("\u001b[?1049h");
@@ -83,32 +85,62 @@ export const App = (): React.JSX.Element => {
       return;
     }
 
+    const switchTab = (tab: (typeof TABS)[number]) => {
+      if (tab !== "sessions") setProjectFilter(null);
+      setActiveTab(tab);
+    };
+
     if (key.leftArrow) {
       const idx = TABS.indexOf(activeTab as any);
-      const nextIdx = (idx - 1 + TABS.length) % TABS.length;
-      setActiveTab(TABS[nextIdx]);
+      switchTab(TABS[(idx - 1 + TABS.length) % TABS.length]);
     } else if (key.rightArrow) {
       const idx = TABS.indexOf(activeTab as any);
-      const nextIdx = (idx + 1) % TABS.length;
-      setActiveTab(TABS[nextIdx]);
+      switchTab(TABS[(idx + 1) % TABS.length]);
     } else if (input === "1") {
-      setActiveTab("dashboard");
+      switchTab("dashboard");
     } else if (input === "2") {
-      setActiveTab("sessions");
+      switchTab("sessions");
     } else if (input === "3") {
-      setActiveTab("projects");
+      switchTab("projects");
     } else if (input === "4") {
-      setActiveTab("charts");
+      switchTab("charts");
     }
 
-    if (activeTab === "sessions" && sessions.length > 0) {
+    if (activeTab === "sessions") {
+      if (key.escape) {
+        setProjectFilter(null);
+        return;
+      }
+      const visibleSessions = projectFilter
+        ? sessions.filter((s) => (s.workspace || "Global Context") === projectFilter)
+        : sessions;
+      if (visibleSessions.length > 0) {
+        if (key.downArrow) {
+          setSelectedIndex((prev) => Math.min(visibleSessions.length - 1, prev + 1));
+        } else if (key.upArrow) {
+          setSelectedIndex((prev) => Math.max(0, prev - 1));
+        } else if (key.return) {
+          setSelectedSessionId(visibleSessions[selectedIndex].id);
+          setActiveTab("detail");
+        }
+      }
+    }
+
+    if (activeTab === "projects") {
+      const costMap: Record<string, number> = {};
+      for (const s of sessions) {
+        const ws = s.workspace || "Global Context";
+        costMap[ws] = (costMap[ws] ?? 0) + s.cost;
+      }
+      const orderedProjects = Object.keys(costMap).sort((a, b) => costMap[b] - costMap[a]);
       if (key.downArrow) {
-        setSelectedIndex((prev) => Math.min(sessions.length - 1, prev + 1));
+        setProjectSelectedIndex((prev) => Math.min(orderedProjects.length - 1, prev + 1));
       } else if (key.upArrow) {
-        setSelectedIndex((prev) => Math.max(0, prev - 1));
-      } else if (key.return) {
-        setSelectedSessionId(sessions[selectedIndex].id);
-        setActiveTab("detail");
+        setProjectSelectedIndex((prev) => Math.max(0, prev - 1));
+      } else if (key.return && orderedProjects.length > 0) {
+        setProjectFilter(orderedProjects[projectSelectedIndex]);
+        setSelectedIndex(0);
+        setActiveTab("sessions");
       }
     }
   });
@@ -122,6 +154,9 @@ export const App = (): React.JSX.Element => {
   }
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId);
+  const filteredSessions = projectFilter
+    ? sessions.filter((s) => (s.workspace || "Global Context") === projectFilter)
+    : sessions;
 
   const sessionsPageSize = Math.max(3, rows - 12);
   const detailTimelinePageSize = Math.max(3, rows - 14);
@@ -141,12 +176,15 @@ export const App = (): React.JSX.Element => {
           {activeTab === "dashboard" && <Dashboard sessions={sessions} />}
           {activeTab === "sessions" && (
             <SessionsList
-              sessions={sessions}
+              sessions={filteredSessions}
               selectedIndex={selectedIndex}
               pageSize={sessionsPageSize}
+              filterWorkspace={projectFilter}
             />
           )}
-          {activeTab === "projects" && <ProjectsSummary sessions={sessions} />}
+          {activeTab === "projects" && (
+            <ProjectsSummary sessions={sessions} selectedIndex={projectSelectedIndex} />
+          )}
           {activeTab === "charts" && <ChartsView sessions={sessions} columns={columns} />}
           {activeTab === "detail" && selectedSession && (
             <SessionDetail

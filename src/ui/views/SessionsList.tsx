@@ -7,6 +7,7 @@ interface SessionsListProps {
   sessions: SessionInfo[];
   selectedIndex: number;
   pageSize: number;
+  filterWorkspace?: string | null;
 }
 
 const formatDate = (d: Date): string => {
@@ -18,6 +19,7 @@ export const SessionsList = ({
   sessions,
   selectedIndex,
   pageSize,
+  filterWorkspace,
 }: SessionsListProps): React.JSX.Element => {
   if (sessions.length === 0) {
     return (
@@ -42,9 +44,12 @@ export const SessionsList = ({
       flexGrow={1}
     >
       <Box justifyContent="space-between" marginBottom={1}>
-        <Text bold underline>
-          CONVERSATION SESSIONS
-        </Text>
+        <Box gap={2}>
+          <Text bold underline>
+            CONVERSATION SESSIONS
+          </Text>
+          {filterWorkspace && <Text color="yellow">&lt;filtered&gt; · Esc to clear</Text>}
+        </Box>
         <Text dimColor>
           Page {currentPage + 1} of {totalPages} ({sessions.length} total)
         </Text>
