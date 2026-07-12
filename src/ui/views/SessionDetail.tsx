@@ -29,7 +29,7 @@ export const SessionDetail = ({
           setSteps(transcriptSteps);
           setSelectedStepIndex(0);
         }
-      } catch (e) {
+      } catch {
         // Ignored
       } finally {
         if (active) setLoading(false);

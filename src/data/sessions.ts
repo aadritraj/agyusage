@@ -41,10 +41,10 @@ export const loadHistoryMap = async (): Promise<
               timestamp: entry.timestamp || Date.now(),
             };
           }
-        } catch (e) {}
+        } catch {}
       }
     }
-  } catch (e) {
+  } catch {
     // Catch this, an empty catch block!
   }
   return map;
@@ -73,7 +73,7 @@ const countToolCalls = async (convId: string): Promise<number> => {
         }
       }
     }
-  } catch (e) {
+  } catch {
     // Ignored
   }
   return toolCallsCount;
@@ -91,7 +91,7 @@ export const getSessionsList = async (): Promise<SessionInfo[]> => {
     for await (const file of glob.scan(conversationsDir)) {
       dbFiles.push(file);
     }
-  } catch (e) {
+  } catch {
     // Did you even use the CLI? If you did, why did this happen?
     return [];
   }
@@ -117,7 +117,7 @@ export const getSessionsList = async (): Promise<SessionInfo[]> => {
             workspace = wsUri.replace(/^file:\/\//, "");
           }
         }
-      } catch (e) {
+      } catch {
         // Get ignored again, falls back to history.jsonl
       }
 
@@ -145,12 +145,12 @@ export const getSessionsList = async (): Promise<SessionInfo[]> => {
               inputTokens += meta.inputTokens;
               outputTokens += meta.outputTokens;
               cachedTokens += meta.cachedTokens;
-            } catch (e) {
+            } catch {
               // Ignored individual step proto error
             }
           }
         }
-      } catch (e) {
+      } catch {
         // Ignored gen_metadata query error
       } finally {
         db.close();
@@ -175,7 +175,7 @@ export const getSessionsList = async (): Promise<SessionInfo[]> => {
           toolCalls,
         });
       }
-    } catch (e) {
+    } catch {
       // Ignored individual DB error
     }
   }

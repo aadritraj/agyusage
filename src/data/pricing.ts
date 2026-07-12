@@ -86,7 +86,7 @@ export const loadPricingCache = async (): Promise<void> => {
       const content = await file.json();
       activePricing = { ...DEFAULT_PRICING, ...content };
     }
-  } catch (e) {
+  } catch {
     // Cache load fail ignored, using local defaults
   }
 };
@@ -126,7 +126,7 @@ export const fetchPricingDynamically = async (): Promise<void> => {
         await Bun.write(cacheFilePath, JSON.stringify(newPricing, null, 2));
       }
     }
-  } catch (e) {
+  } catch {
     // Ignore fetch errors (e.g. offline)
   }
 };

@@ -52,12 +52,12 @@ export const getSessionTranscript = async (convId: string): Promise<TranscriptSt
               thinking: entry.thinking ?? undefined,
             });
           }
-        } catch (e) {
+        } catch {
           // Ignored line errors
         }
       }
     }
-  } catch (e) {
+  } catch {
     // Ignored log reading errors
   }
 
