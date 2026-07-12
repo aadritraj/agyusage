@@ -9,7 +9,9 @@
     "start:hot": "bun run --watch src/index.tsx",
     "build": "bun build src/index.tsx --target=bun --outfile=dist/agyusage",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "fmt:check": "oxfmt --check",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix"
   },
   "dependencies": {
     "@pppp606/ink-chart": "^0.2.6",
@@ -22,6 +24,7 @@
     "@types/react": "^18.2.55",
     "bun-types": "^1.0.26",
     "oxfmt": "^0.57.0",
+    "oxlint": "^1.73.0",
     "react-devtools-core": "^7.0.1",
     "typescript": "^5.3.3"
   }
