@@ -7,45 +7,41 @@ import { SessionsList } from "./views/SessionsList";
 import { SessionDetail } from "./views/SessionDetail";
 import { ProjectsSummary } from "./views/ProjectsSummary";
 import { ChartsView } from "./views/ChartsView";
+import { useTerminalSize } from "./hooks/useTerminalSize";
+import { useScrollableList } from "./hooks/useScrollableList";
 import { fetchPricingDynamically, loadPricingCache } from "../data/pricing";
 import { getSessionsList, type SessionInfo } from "../data/sessions";
 
 const TABS = ["dashboard", "sessions", "projects", "charts"] as const;
-type TabType = (typeof TABS)[number] | "detail";
+type Tab = (typeof TABS)[number] | "detail";
 
-const useTerminalSize = () => {
-  const [size, setSize] = React.useState({
-    columns: process.stdout.columns || 80,
-    rows: process.stdout.rows || 24,
-  });
+const TAB_KEYS: Record<string, (typeof TABS)[number]> = {
+  "1": "dashboard",
+  "2": "sessions",
+  "3": "projects",
+  "4": "charts",
+};
 
-  React.useEffect(() => {
-    const handleResize = () => {
-      setSize({
-        columns: process.stdout.columns || 80,
-        rows: process.stdout.rows || 24,
-      });
-    };
-
-    process.stdout.on("resize", handleResize);
-    return () => {
-      process.stdout.off("resize", handleResize);
-    };
-  }, []);
-
-  return size;
+const sortedProjectWorkspaces = (sessions: SessionInfo[]): string[] => {
+  const costs: Record<string, number> = {};
+  for (const s of sessions) {
+    const ws = s.workspace || "Global Context";
+    costs[ws] = (costs[ws] ?? 0) + s.cost;
+  }
+  return Object.keys(costs).sort((a, b) => costs[b] - costs[a]);
 };
 
 export const App = (): React.JSX.Element => {
   const { exit } = useApp();
   const { columns, rows } = useTerminalSize();
-  const [activeTab, setActiveTab] = React.useState<TabType>("dashboard");
+
+  const [activeTab, setActiveTab] = React.useState<Tab>("dashboard");
   const [sessions, setSessions] = React.useState<SessionInfo[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const [sessionIndex, setSessionIndex] = React.useState(0);
   const [selectedSessionId, setSelectedSessionId] = React.useState<string | null>(null);
   const [projectFilter, setProjectFilter] = React.useState<string | null>(null);
-  const [projectSelectedIndex, setProjectSelectedIndex] = React.useState(0);
+  const [projectIndex, setProjectIndex] = React.useState(0);
 
   React.useEffect(() => {
     process.stdout.write("\u001b[?1049h");
@@ -55,27 +51,27 @@ export const App = (): React.JSX.Element => {
   }, []);
 
   React.useEffect(() => {
-    const initData = async () => {
+    (async () => {
       setLoading(true);
       try {
         await loadPricingCache();
-        const data = await getSessionsList();
-        setSessions(data);
+        setSessions(await getSessionsList());
         fetchPricingDynamically();
-      } catch (e) {
+      } catch {
         // Ignored
       } finally {
         setLoading(false);
       }
-    };
-    initData();
+    })();
+  }, []);
+
+  const switchTab = React.useCallback((tab: (typeof TABS)[number]) => {
+    if (tab !== "sessions") setProjectFilter(null);
+    setActiveTab(tab);
   }, []);
 
   useInput((input, key) => {
-    if (input === "q") {
-      exit();
-      return;
-    }
+    if (input === "q") return exit();
 
     if (activeTab === "detail") {
       if (key.escape || key.backspace) {
@@ -85,64 +81,43 @@ export const App = (): React.JSX.Element => {
       return;
     }
 
-    const switchTab = (tab: (typeof TABS)[number]) => {
-      if (tab !== "sessions") setProjectFilter(null);
-      setActiveTab(tab);
-    };
+    // Tab switching
+    const i = TABS.indexOf(activeTab as (typeof TABS)[number]);
+    if (key.leftArrow) switchTab(TABS[(i - 1 + TABS.length) % TABS.length]);
+    else if (key.rightArrow) switchTab(TABS[(i + 1) % TABS.length]);
+    else if (input in TAB_KEYS) switchTab(TAB_KEYS[input]);
 
-    if (key.leftArrow) {
-      const idx = TABS.indexOf(activeTab as any);
-      switchTab(TABS[(idx - 1 + TABS.length) % TABS.length]);
-    } else if (key.rightArrow) {
-      const idx = TABS.indexOf(activeTab as any);
-      switchTab(TABS[(idx + 1) % TABS.length]);
-    } else if (input === "1") {
-      switchTab("dashboard");
-    } else if (input === "2") {
-      switchTab("sessions");
-    } else if (input === "3") {
-      switchTab("projects");
-    } else if (input === "4") {
-      switchTab("charts");
-    }
+    // Sessions tab escape
+    if (activeTab === "sessions" && key.escape) setProjectFilter(null);
+  });
 
-    if (activeTab === "sessions") {
-      if (key.escape) {
-        setProjectFilter(null);
-        return;
-      }
-      const visibleSessions = projectFilter
+  const filteredSessions = React.useMemo(
+    () =>
+      projectFilter
         ? sessions.filter((s) => (s.workspace || "Global Context") === projectFilter)
-        : sessions;
-      if (visibleSessions.length > 0) {
-        if (key.downArrow) {
-          setSelectedIndex((prev) => Math.min(visibleSessions.length - 1, prev + 1));
-        } else if (key.upArrow) {
-          setSelectedIndex((prev) => Math.max(0, prev - 1));
-        } else if (key.return) {
-          setSelectedSessionId(visibleSessions[selectedIndex].id);
-          setActiveTab("detail");
-        }
-      }
-    }
+        : sessions,
+    [sessions, projectFilter],
+  );
 
-    if (activeTab === "projects") {
-      const costMap: Record<string, number> = {};
-      for (const s of sessions) {
-        const ws = s.workspace || "Global Context";
-        costMap[ws] = (costMap[ws] ?? 0) + s.cost;
-      }
-      const orderedProjects = Object.keys(costMap).sort((a, b) => costMap[b] - costMap[a]);
-      if (key.downArrow) {
-        setProjectSelectedIndex((prev) => Math.min(orderedProjects.length - 1, prev + 1));
-      } else if (key.upArrow) {
-        setProjectSelectedIndex((prev) => Math.max(0, prev - 1));
-      } else if (key.return && orderedProjects.length > 0) {
-        setProjectFilter(orderedProjects[projectSelectedIndex]);
-        setSelectedIndex(0);
-        setActiveTab("sessions");
-      }
-    }
+  const projects = React.useMemo(() => sortedProjectWorkspaces(sessions), [sessions]);
+
+  useScrollableList(sessionIndex, setSessionIndex, {
+    length: filteredSessions.length,
+    isActive: activeTab === "sessions",
+    onSelect: (i) => {
+      setSelectedSessionId(filteredSessions[i].id);
+      setActiveTab("detail");
+    },
+  });
+
+  useScrollableList(projectIndex, setProjectIndex, {
+    length: projects.length,
+    isActive: activeTab === "projects",
+    onSelect: (i) => {
+      setProjectFilter(projects[i]);
+      setSessionIndex(0);
+      setActiveTab("sessions");
+    },
   });
 
   if (loading) {
@@ -154,12 +129,9 @@ export const App = (): React.JSX.Element => {
   }
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId);
-  const filteredSessions = projectFilter
-    ? sessions.filter((s) => (s.workspace || "Global Context") === projectFilter)
-    : sessions;
 
   const sessionsPageSize = Math.max(3, rows - 12);
-  const detailTimelinePageSize = Math.max(3, rows - 14);
+  const detailPageSize = Math.max(3, rows - 14);
 
   return (
     <Box
@@ -177,19 +149,19 @@ export const App = (): React.JSX.Element => {
           {activeTab === "sessions" && (
             <SessionsList
               sessions={filteredSessions}
-              selectedIndex={selectedIndex}
+              selectedIndex={sessionIndex}
               pageSize={sessionsPageSize}
               filterWorkspace={projectFilter}
             />
           )}
           {activeTab === "projects" && (
-            <ProjectsSummary sessions={sessions} selectedIndex={projectSelectedIndex} />
+            <ProjectsSummary sessions={sessions} selectedIndex={projectIndex} />
           )}
           {activeTab === "charts" && <ChartsView sessions={sessions} columns={columns} />}
           {activeTab === "detail" && selectedSession && (
             <SessionDetail
               session={selectedSession}
-              timelinePageSize={detailTimelinePageSize}
+              timelinePageSize={detailPageSize}
               onBack={() => {
                 setActiveTab("sessions");
                 setSelectedSessionId(null);
