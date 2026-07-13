@@ -21,11 +21,11 @@ export const DEFAULT_PRICING: Record<string, ModelPricing> = {
     cachedPricePerM: 0.3,
   },
   "Claude Opus 4.6 (Thinking)": {
-    inputPricePerM: 15.0,
-    outputPricePerM: 75.0,
-    cachedPricePerM: 1.5,
+    inputPricePerM: 5.0,
+    outputPricePerM: 25.0,
+    cachedPricePerM: 0.5,
   },
-  "GPT-OSS 120B (Medium)": { inputPricePerM: 0.5, outputPricePerM: 1.5, cachedPricePerM: 0.05 },
+  "GPT-OSS 120B (Medium)": { inputPricePerM: 0.036, outputPricePerM: 0.18, cachedPricePerM: 0.0036 },
 };
 
 const FALLBACK_PRICING: ModelPricing = {
@@ -39,29 +39,40 @@ let activePricing: Record<string, ModelPricing> = { ...DEFAULT_PRICING };
 const baseDir = path.join(os.homedir(), ".gemini", "antigravity-cli");
 const cacheFilePath = path.join(baseDir, "pricing_cache.json");
 
+// Normalize a human-readable model name to a slug for fuzzy matching against
+// OpenRouter model IDs (e.g. "Claude Sonnet 4.6 (Thinking)" → "claude-sonnet-4-6")
+const toSlug = (name: string): string =>
+  name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
 export const getPricingForModel = (modelName: string): ModelPricing => {
   if (activePricing[modelName]) return activePricing[modelName];
 
-  const lowerName = modelName.toLowerCase();
+  const slug = toSlug(modelName);
+  const slugParts = slug.split("-").filter(Boolean);
 
+  // Match against cache keys — works for both id-slugs ("anthropic/claude-sonnet-4-5")
+  // and legacy name keys ("Anthropic: Claude Sonnet 5")
+  let bestKey: string | null = null;
+  let bestScore = 0;
   for (const key of Object.keys(activePricing)) {
-    if (lowerName.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerName)) {
-      return activePricing[key];
+    const keySlug = toSlug(key);
+    const matches = slugParts.filter((p) => p.length > 2 && keySlug.includes(p)).length;
+    if (matches > bestScore) {
+      bestScore = matches;
+      bestKey = key;
     }
   }
+  if (bestKey && bestScore >= 2) return activePricing[bestKey];
 
-  if (lowerName.includes("flash")) {
-    return activePricing["gemini-3-flash-a"];
-  }
-  if (lowerName.includes("pro")) {
-    return activePricing["Gemini 3.1 Pro (High)"];
-  }
-  if (lowerName.includes("sonnet")) {
-    return activePricing["Claude Sonnet 4.6 (Thinking)"];
-  }
-  if (lowerName.includes("opus")) {
-    return activePricing["Claude Opus 4.6 (Thinking)"];
-  }
+  // Keyword fallbacks using DEFAULT_PRICING anchors
+  if (slug.includes("flash")) return activePricing["gemini-3-flash-a"] ?? FALLBACK_PRICING;
+  if (slug.includes("pro")) return activePricing["Gemini 3.1 Pro (High)"] ?? FALLBACK_PRICING;
+  if (slug.includes("sonnet"))
+    return activePricing["Claude Sonnet 4.6 (Thinking)"] ?? FALLBACK_PRICING;
+  if (slug.includes("opus")) return activePricing["Claude Opus 4.6 (Thinking)"] ?? FALLBACK_PRICING;
 
   return FALLBACK_PRICING;
 };
@@ -111,7 +122,9 @@ export const fetchPricingDynamically = async (): Promise<void> => {
           const completion = Number(item.pricing?.completion || 0) * 1_000_000;
 
           if (prompt > 0 || completion > 0) {
-            newPricing[item.name] = {
+            // Key by id (e.g. "anthropic/claude-sonnet-4-5") for reliable slug matching
+            const key = item.id ?? item.name;
+            newPricing[key] = {
               inputPricePerM: prompt,
               outputPricePerM: completion,
               cachedPricePerM: prompt * 0.1, // estimate cached at 10%
