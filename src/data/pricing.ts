@@ -25,7 +25,11 @@ export const DEFAULT_PRICING: Record<string, ModelPricing> = {
     outputPricePerM: 25.0,
     cachedPricePerM: 0.5,
   },
-  "GPT-OSS 120B (Medium)": { inputPricePerM: 0.036, outputPricePerM: 0.18, cachedPricePerM: 0.0036 },
+  "GPT-OSS 120B (Medium)": {
+    inputPricePerM: 0.036,
+    outputPricePerM: 0.18,
+    cachedPricePerM: 0.0036,
+  },
 };
 
 const FALLBACK_PRICING: ModelPricing = {
